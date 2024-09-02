@@ -1,47 +1,95 @@
-<script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue'
-import TheWelcome from './components/TheWelcome.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-    </div>
-  </header>
-
-  <main>
-    <TheWelcome />
-  </main>
+  <MyHeader />
+  <div class="flex flex-col md:flex-row md:justify-center">
+    <MyForm
+      :isError="isError"
+      :message="message"
+      :showAlert="showAlert"
+      :patient="patient"
+      @update-patient-name="patient.patient_name = $event.target.value"
+      @update-owner-name="patient.owner_name = $event.target.value"
+      @update-email="patient.email = $event.target.value"
+      @update-date="patient.date = $event.target.value"
+      @update-symptoms="patient.symptoms = $event.target.value"
+      @save-patient="savePatient"
+    />
+    <MyList :patients="patients" :removePatient="removePatient" />
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-}
+<script setup lang="ts">
+import { reactive, ref, watch } from 'vue'
+import { v4 as uuid } from 'uuid'
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+import MyHeader from './components/MyHeader.vue'
+import MyForm from './components/MyForm.vue'
+import MyList from './components/MyList.vue'
 
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+import { type Patient } from './interfaces'
+
+const isError = ref<boolean>(false)
+const message = ref<string>('')
+const showAlert = ref<boolean>(false)
+const patients = ref<Patient[]>(JSON.parse(localStorage.getItem('patients-list') ?? '[]'))
+const patient = reactive<Patient>({
+  id: '',
+  patient_name: '',
+  owner_name: '',
+  email: '',
+  date: '',
+  symptoms: '',
+})
+
+const savePatient = (e: Event) => {
+  e.preventDefault()
+
+  const { id, ...rest } = patient
+
+  if (Object.values(rest).includes('')) {
+    isError.value = true
+    message.value = 'Todos los campos son requeridos'
+    showAlert.value = true
+    setTimeout(() => {
+      isError.value = false
+      message.value = ''
+      showAlert.value = false
+    }, 3000)
+    return
   }
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+  patients.value.push({
+    ...patient,
+    id: uuid(),
+  })
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+  patient.id = ''
+  patient.patient_name = ''
+  patient.owner_name = ''
+  patient.email = ''
+  patient.date = ''
+  patient.symptoms = ''
+
+  isError.value = false
+  message.value = 'Paciente almacenado correctamente'
+  showAlert.value = true
+  setTimeout(() => {
+    isError.value = false
+    message.value = ''
+    showAlert.value = false
+  }, 3000)
 }
-</style>
+
+const updatePatient = (id: string) => {}
+
+const removePatient = (id: string) => {
+  patients.value = patients.value.filter((patient) => patient.id !== id)
+}
+
+watch(
+  patients,
+  () => {
+    localStorage.setItem('patients-list', JSON.stringify(patients.value))
+  },
+  { deep: true },
+)
+</script>

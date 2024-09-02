@@ -1,4 +1,4 @@
-# administrador-pacientes
+# Administrador de Pacientes - Vue.js - Composition API - TypeScript
 
 This template should help get you started developing with Vue 3 in Vite.
 
